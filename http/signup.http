@@ -1,0 +1,8 @@
+### Sign up a user using email and password
+POST {{url}}/signup
+Content-Type: application/json
+
+{
+  "email": "john.doe@example.com",
+  "password": "Pa$$w0rd"
+}
