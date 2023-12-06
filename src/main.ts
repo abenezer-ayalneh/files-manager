@@ -7,6 +7,7 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe())
   app.setGlobalPrefix('api')
   await app.listen(process.env.APP_PORT ?? 3000)
+  console.log('Application running at ', await app.getUrl())
 }
 
 bootstrap()
