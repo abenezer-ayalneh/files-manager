@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  Inject,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common'
@@ -8,12 +9,18 @@ import { HashingService } from '../hashing/hashing.service'
 import { SignUpDto } from './dto/sign-up.dto/sign-up.dto'
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
 import { SignInDto } from './dto/sign-in.dto/sign-in.dto'
+import { JwtService } from '@nestjs/jwt'
+import jwtConfig from '../config/jwt.config'
+import { ConfigType } from '@nestjs/config'
 
 @Injectable()
 export class AuthenticationService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly hashingService: HashingService,
+    private readonly jwtService: JwtService,
+    @Inject(jwtConfig.KEY)
+    private readonly jwtConfiguration: ConfigType<typeof jwtConfig>,
   ) {}
 
   async signUp(signUpDto: SignUpDto) {
@@ -48,6 +55,18 @@ export class AuthenticationService {
       throw new UnauthorizedException('Email or password mismatch')
     }
 
-    return true
+    const accessToken = await this.jwtService.signAsync(
+      {
+        sub: user.id,
+        email: user.email,
+      },
+      {
+        audience: this.jwtConfiguration.audience,
+        issuer: this.jwtConfiguration.issuer,
+        secret: this.jwtConfiguration.secret,
+        expiresIn: this.jwtConfiguration.accessTokenTtl,
+      },
+    )
+    return { accessToken }
   }
 }
