@@ -18,6 +18,7 @@ import { User } from '@prisma/client'
 import { RefreshTokenIdsStorage } from './refresh-token-ids.storage/refresh-token-ids.storage'
 import { randomUUID } from 'node:crypto'
 import { RefreshTokenData } from '../interfaces/refresh-token-data.interfaces'
+import { InvalidatedRefreshTokenError } from '../errors/invalidated-refresh-token.error'
 
 @Injectable()
 export class AuthenticationService {
@@ -123,6 +124,9 @@ export class AuthenticationService {
 
       return this.generateTokens(user)
     } catch (e) {
+      if (e instanceof InvalidatedRefreshTokenError) {
+        throw new UnauthorizedException('Access denied')
+      }
       throw new UnauthorizedException()
     }
   }
