@@ -1,29 +1,12 @@
-import {
-  Injectable,
-  OnApplicationBootstrap,
-  OnApplicationShutdown,
-} from '@nestjs/common'
-import Redis from 'ioredis'
-import { ConfigService } from '@nestjs/config'
+import { Injectable } from '@nestjs/common'
+import { RedisService } from '../../../redis/redis.service'
 
 @Injectable()
-export class RefreshTokenIdsStorage
-  implements OnApplicationBootstrap, OnApplicationShutdown
-{
-  private redisClient: Redis
-
-  constructor(private readonly configService: ConfigService) {}
-
-  onApplicationBootstrap(): any {
-    //TODO: Ideally, this should be moved to a separate redis module
-    this.redisClient = new Redis({
-      host: this.configService.get('REDIS_HOST'),
-      port: this.configService.get('REDIS_PORT'),
-    })
-  }
+export class RefreshTokenIdsStorage {
+  constructor(private readonly redisService: RedisService) {}
 
   onApplicationShutdown(): any {
-    return this.redisClient.quit()
+    return this.redisService.redisClient.quit()
   }
 
   private getKey(userId: number): string {
@@ -31,15 +14,17 @@ export class RefreshTokenIdsStorage
   }
 
   async insert(userId: number, tokenId: string): Promise<void> {
-    await this.redisClient.set(this.getKey(userId), tokenId)
+    await this.redisService.redisClient.set(this.getKey(userId), tokenId)
   }
 
   async validate(userId: number, tokenId: string): Promise<boolean> {
-    const storedId = await this.redisClient.get(this.getKey(userId))
+    const storedId = await this.redisService.redisClient.get(
+      this.getKey(userId),
+    )
     return storedId === tokenId
   }
 
   async invalidate(userId: number): Promise<void> {
-    await this.redisClient.del(this.getKey(userId))
+    await this.redisService.redisClient.del(this.getKey(userId))
   }
 }
