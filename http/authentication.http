@@ -1,0 +1,25 @@
+### Sign up a user using email and password
+POST {{url}}/authentication/sign-up
+Content-Type: application/json
+
+{
+  "email": "john.doe@gmail.com",
+  "password": "passpass"
+}
+
+### Sign in using email and password
+POST {{url}}/authentication/sign-in
+Content-Type: application/json
+
+{
+  "email": "john.doe@gmail.com",
+  "password": "passpass"
+}
+
+### Refresh an access token using refresh token
+POST {{url}}/authentication/refresh-token
+Content-Type: application/json
+
+{
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsInJlZnJlc2hUb2tlbklkIjoiNGZkMWY3NmYtODZlMS00MWQ5LTllYmQtZGI1ODU3ZjMxNGFlIiwiaWF0IjoxNzAyMDIyOTkzLCJleHAiOjE3MDIwMjY1OTMsImF1ZCI6ImxvY2FsaG9zdDozMDAwIiwiaXNzIjoibG9jYWxob3N0OjMwMDAifQ.WoUdRZI-vyPFpoc38xYVE8JGMump9bLq4xFGLD5yw94"
+}
