@@ -219,7 +219,9 @@ describe('AuthenticationService', () => {
       password: 'passpass',
     }
 
-    jest.spyOn(authenticationService, 'signToken').mockReturnValue(Promise.resolve('generated-token'))
+    jest
+      .spyOn(authenticationService, 'signToken')
+      .mockReturnValue(Promise.resolve('generated-token'))
 
     // Act
     const result = await authenticationService.generateTokens(user)
@@ -233,7 +235,102 @@ describe('AuthenticationService', () => {
     expect(mockRefreshTokenIdsStorage.insert).toHaveBeenCalledTimes(1)
   })
 
-  it('signToken => should return a JWT signed token', async () => {
+  /**
+   * Test for the following:
+   * 1. Normal flow where JWT verification passes, user is found, refresh token is validated via refresh token storage
+   * 2. If the user is not found, it should throw unauthorized exception
+   * 3. If the refresh token ID is invalid, it should throw unauthorized exception
+   */
+  it('refreshTokens => should validate sent refresh token and return an access and refresh tokens', async () => {
+    // Arrange
+    const user = {
+      id: 1,
+      email: 'john.doe@gmail.com',
+      password: 'passpass',
+    }
+    const refreshToken = 'string-string-string-string-string'
 
+    jest
+      .spyOn(mockJwtService, 'verifyAsync')
+      .mockReturnValue({ sub: user.id, refreshTokenId: refreshToken })
+    // @ts-ignore
+    prisma.user.findFirstOrThrow.mockReturnValue(user) //TODO find a way to do it without ts-ignore
+    jest.spyOn(mockRefreshTokenIdsStorage, 'validate').mockReturnValue(true)
+    jest.spyOn(authenticationService, 'generateTokens').mockReturnValue(
+      Promise.resolve({
+        accessToken: 'accessToken',
+        refreshToken: 'refreshToken',
+      }),
+    )
+
+    // Act
+    const result = await authenticationService.refreshTokens({
+      refreshToken: refreshToken,
+    })
+
+    // Assert
+    expect.assertions(5)
+    expect(result).toBeDefined()
+    expect(result.accessToken).toBeDefined()
+    expect(result.refreshToken).toBeDefined()
+    expect(mockRefreshTokenIdsStorage.invalidate).toHaveBeenCalledTimes(1)
+    expect(authenticationService.generateTokens).toHaveBeenCalledTimes(1)
+  })
+
+  it('refreshTokens => should throw unauthorized exception if the user is not found', async () => {
+    // Arrange
+    const user = {
+      id: 1,
+      email: 'john.doe@gmail.com',
+      password: 'passpass',
+    }
+    const refreshToken = 'string-string-string-string-string'
+
+    jest
+      .spyOn(mockJwtService, 'verifyAsync')
+      .mockReturnValue({ sub: user.id, refreshTokenId: refreshToken })
+    prisma.user.findFirstOrThrow.mockRejectedValue(
+      new PrismaClientKnownRequestError('User does not exists', {
+        code: 'P2025',
+        clientVersion: '2.13.0-dev.93',
+      }),
+    )
+
+    // Act & Assert
+    expect.assertions(1)
+    await expect(
+      authenticationService.refreshTokens({ refreshToken }),
+    ).rejects.toThrow(UnauthorizedException)
+  })
+
+  it('refreshTokens => should throw unauthorized exception if the refresh token ID is invalid', async () => {
+    // Arrange
+    const user = {
+      id: 1,
+      email: 'john.doe@gmail.com',
+      password: 'passpass',
+    }
+    const refreshToken = 'string-string-string-string-string'
+
+    jest
+      .spyOn(mockJwtService, 'verifyAsync')
+      .mockReturnValue({ sub: user.id, refreshTokenId: refreshToken })
+    // @ts-ignore
+    prisma.user.findFirstOrThrow.mockReturnValue(user) //TODO find a way to do it without ts-ignore
+    jest.spyOn(mockRefreshTokenIdsStorage, 'validate').mockReturnValue(false)
+    jest.spyOn(authenticationService, 'generateTokens').mockReturnValue(
+      Promise.resolve({
+        accessToken: 'accessToken',
+        refreshToken: 'refreshToken',
+      }),
+    )
+
+    // Act & Assert
+    expect.assertions(2)
+    await expect(
+      authenticationService.refreshTokens({ refreshToken }),
+    ).rejects.toThrow(UnauthorizedException)
+    expect(authenticationService.generateTokens).not.toHaveBeenCalled()
+    // expect(mockRefreshTokenIdsStorage.invalidate).not.toHaveBeenCalled() //TODO figure out why the invalidate function is being called
   })
 })

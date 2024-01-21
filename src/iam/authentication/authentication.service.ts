@@ -108,10 +108,11 @@ export class AuthenticationService {
         audience: this.jwtConfiguration.audience,
         issuer: this.jwtConfiguration.issuer,
       })
-
       const user = await this.prismaService.user.findFirstOrThrow({
         where: { id: sub },
       })
+
+
       const isValid = await this.refreshTokenIdsStorage.validate(
         user.id,
         refreshTokenId,
@@ -122,7 +123,7 @@ export class AuthenticationService {
         throw new Error('Refresh token is invalid')
       }
 
-      return this.generateTokens(user)
+      return await this.generateTokens(user)
     } catch (e) {
       if (e instanceof InvalidatedRefreshTokenError) {
         throw new UnauthorizedException('Access denied')
