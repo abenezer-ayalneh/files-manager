@@ -1,8 +1,8 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, OnApplicationShutdown } from "@nestjs/common";
 import { RedisService } from '../../../redis/redis.service'
 
 @Injectable()
-export class RefreshTokenIdsStorage {
+export class RefreshTokenIdsStorage implements OnApplicationShutdown {
   constructor(private readonly redisService: RedisService) {}
 
   onApplicationShutdown(): any {
