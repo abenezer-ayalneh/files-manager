@@ -12,8 +12,9 @@ async function bootstrap() {
     }),
   )
   app.setGlobalPrefix('api')
-  await app.listen(process.env.APP_PORT ?? 3000)
-  console.info('Application running at ', await app.getUrl())
+  await app.listen(process.env.APP_PORT ?? 3000, async () =>
+    console.info('Application running at ', await app.getUrl()),
+  )
 }
 
 bootstrap()
